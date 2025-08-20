@@ -135,7 +135,7 @@ export default function PokemonCard({ pokemon }: PokemonCardProps) {
               variant="outline"
               size="sm"
               onClick={() => setShowStats(!showStats)}
-              className="w-full flex items-center gap-2 text-sm"
+              className="w-full !bg-[#0F172A] flex items-center gap-2 text-sm"
             >
               <Eye className="w-4 h-4" />
               {showStats ? "Hide Stats" : "Show Stats"}

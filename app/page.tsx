@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { gsap } from "gsap";
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,59 +12,137 @@ export default function LandingPage() {
   const loadingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initial page load animation
-    const tl = gsap.timeline();
+    const animateElement = (
+      element: HTMLElement,
+      keyframes: Keyframe[],
+      options: KeyframeAnimationOptions
+    ) => {
+      if (element) {
+        element.animate(keyframes, options);
+      }
+    };
 
-    tl.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 1, ease: "power3.out" }
-    )
-      .fromTo(
-        subtitleRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-        "-=0.5"
-      )
-      .fromTo(
-        buttonRef.current,
-        { opacity: 0, scale: 0.8 },
-        { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" },
-        "-=0.3"
+    // Initial page load animation sequence
+    setTimeout(() => {
+      animateElement(
+        titleRef.current!,
+        [
+          { opacity: 0, transform: "translateY(50px)" },
+          { opacity: 1, transform: "translateY(0px)" },
+        ],
+        {
+          duration: 1000,
+          easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          fill: "forwards",
+        }
       );
+    }, 100);
+
+    setTimeout(() => {
+      animateElement(
+        subtitleRef.current!,
+        [
+          { opacity: 0, transform: "translateY(30px)" },
+          { opacity: 1, transform: "translateY(0px)" },
+        ],
+        {
+          duration: 800,
+          easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          fill: "forwards",
+        }
+      );
+    }, 600);
+
+    setTimeout(() => {
+      animateElement(
+        buttonRef.current!,
+        [
+          { opacity: 0, transform: "scale(0.8)" },
+          { opacity: 1, transform: "scale(1)" },
+        ],
+        {
+          duration: 600,
+          easing: "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+          fill: "forwards",
+        }
+      );
+    }, 900);
   }, []);
 
   const handleGoClick = () => {
     setIsLoading(true);
 
-    // GSAP loading animation
-    const tl = gsap.timeline();
-
-    // Fade out current content
-    tl.to([titleRef.current, subtitleRef.current, buttonRef.current], {
-      opacity: 0,
-      y: -30,
-      duration: 0.5,
-      ease: "power2.in",
-    })
-      // Show loading animation
-      .to(loadingRef.current, {
-        opacity: 1,
-        duration: 0.3,
-      })
-      // Animate loading elements
-      .to(".loading-dot", {
-        scale: 1.5,
-        duration: 0.4,
-        stagger: 0.1,
-        repeat: 3,
-        yoyo: true,
-        ease: "power2.inOut",
-      })
-      // Redirect to main site
-      .call(() => {
-        window.location.href = "/search";
+    const animateOut = () => {
+      const elements = [
+        titleRef.current,
+        subtitleRef.current,
+        buttonRef.current,
+      ].filter(Boolean);
+      elements.forEach((element) => {
+        element?.animate(
+          [
+            { opacity: 1, transform: "translateY(0px)" },
+            { opacity: 0, transform: "translateY(-30px)" },
+          ],
+          {
+            duration: 500,
+            easing: "cubic-bezier(0.55, 0.085, 0.68, 0.53)",
+            fill: "forwards",
+          }
+        );
       });
+    };
+
+    const showLoading = () => {
+      loadingRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 300,
+        fill: "forwards",
+      });
+
+      // Animate loading dots
+      const dots = document.querySelectorAll(".loading-dot");
+      dots.forEach((dot, index) => {
+        setTimeout(() => {
+          const animation = dot.animate(
+            [
+              { transform: "scale(1)" },
+              { transform: "scale(1.5)" },
+              { transform: "scale(1)" },
+            ],
+            {
+              duration: 400,
+              easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            }
+          );
+
+          // Repeat animation 3 times
+          let repeatCount = 0;
+          animation.addEventListener("finish", () => {
+            if (repeatCount < 2) {
+              repeatCount++;
+              dot.animate(
+                [
+                  { transform: "scale(1)" },
+                  { transform: "scale(1.5)" },
+                  { transform: "scale(1)" },
+                ],
+                {
+                  duration: 400,
+                  easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                }
+              );
+            }
+          });
+        }, index * 100);
+      });
+    };
+
+    // Execute animation sequence
+    animateOut();
+    setTimeout(showLoading, 500);
+    setTimeout(() => {
+      window.location.href = "/search";
+    }, 2000);
   };
 
   return (
@@ -83,7 +160,7 @@ export default function LandingPage() {
       <div className="text-center z-10 max-w-2xl mx-auto px-6">
         <h1
           ref={titleRef}
-          className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-chart-1 bg-clip-text text-transparent"
+          className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-chart-1 bg-clip-text text-transparent opacity-0"
           style={{ fontFamily: "var(--font-heading)" }}
         >
           PokéLux
@@ -91,7 +168,7 @@ export default function LandingPage() {
 
         <p
           ref={subtitleRef}
-          className="text-xl md:text-2xl text-muted-foreground mb-12 leading-relaxed"
+          className="text-xl md:text-2xl text-muted-foreground mb-12 leading-relaxed opacity-0"
           style={{ fontFamily: "var(--font-body)" }}
         >
           Experience the world of Pokémon like never before.
@@ -103,7 +180,7 @@ export default function LandingPage() {
           ref={buttonRef}
           onClick={handleGoClick}
           disabled={isLoading}
-          className="px-12 py-6 text-xl font-semibold bg-primary hover:bg-primary/90 glow-primary rounded-full transition-all duration-300 transform hover:scale-105"
+          className="px-12 py-6 text-xl font-semibold bg-primary hover:bg-primary/90 glow-primary rounded-full transition-all duration-300 transform hover:scale-105 opacity-0"
           style={{ fontFamily: "var(--font-heading)" }}
         >
           {isLoading ? "Loading..." : "Enter PokéLux"}
