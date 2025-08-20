@@ -233,8 +233,7 @@ export default function PokemonDetailsPage() {
                     <img
                       ref={imageRef}
                       src={
-                        pokemon.sprites.other["official-artwork"]
-                          .front_default ||
+                        pokemon.sprites.other["home"].front_default ||
                         "/placeholder.svg?height=300&width=300" ||
                         "/placeholder.svg" ||
                         "/placeholder.svg"
