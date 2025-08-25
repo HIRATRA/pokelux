@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Scale, Ruler } from "lucide-react";
 import { useFavorites } from "@/hooks/use-favorites";
+import Image from "next/image";
 
 interface PokemonDetails {
   id: number;
@@ -21,6 +22,9 @@ interface PokemonDetails {
   sprites: {
     other: {
       "official-artwork": {
+        front_default: string;
+      };
+      home: {
         front_default: string;
       };
     };
