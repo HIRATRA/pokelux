@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { gsap } from "gsap";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Search, Zap, Menu, X } from "lucide-react";
@@ -13,6 +14,8 @@ export default function PokemonNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { favorites } = useFavorites();
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +25,38 @@ export default function PokemonNavbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (isMobileMenuOpen && mobileMenuRef.current) {
+      gsap.fromTo(
+        mobileMenuRef.current,
+        { opacity: 0, y: -20, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "back.out(1.7)" }
+      );
+
+      gsap.fromTo(
+        mobileMenuRef.current.querySelectorAll(".mobile-nav-item"),
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, ease: "power3.out" }
+      );
+    }
+  }, [isMobileMenuOpen]);
+
+  const handleLogoHover = () => {
+    gsap.to(logoRef.current, {
+      scale: 1.05,
+      duration: 0.3,
+      ease: "back.out(1.7)",
+    });
+  };
+
+  const handleLogoLeave = () => {
+    gsap.to(logoRef.current, {
+      scale: 1,
+      duration: 0.3,
+      ease: "power3.out",
+    });
+  };
 
   const navLinks = [
     {
@@ -47,7 +82,18 @@ export default function PokemonNavbar() {
   };
 
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    if (isMobileMenuOpen && mobileMenuRef.current) {
+      gsap.to(mobileMenuRef.current, {
+        opacity: 0,
+        y: -20,
+        scale: 0.95,
+        duration: 0.2,
+        ease: "power3.in",
+        onComplete: () => setIsMobileMenuOpen(false),
+      });
+    } else {
+      setIsMobileMenuOpen(true);
+    }
   };
 
   return (
@@ -65,7 +111,10 @@ export default function PokemonNavbar() {
             <Link href="/" className="flex items-center space-x-2 group">
               <div className="relative">
                 <div
-                  className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-200"
+                  ref={logoRef}
+                  onMouseEnter={handleLogoHover}
+                  onMouseLeave={handleLogoLeave}
+                  className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent cursor-pointer"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
                   PokéLux
@@ -129,7 +178,10 @@ export default function PokemonNavbar() {
             className="fixed inset-0 bg-background/80 backdrop-blur-sm"
             onClick={toggleMobileMenu}
           />
-          <div className="fixed top-20 left-4 right-4 bg-card border border-border rounded-lg shadow-xl p-6">
+          <div
+            ref={mobileMenuRef}
+            className="fixed top-20 left-4 right-4 bg-card border border-border rounded-lg shadow-xl p-6"
+          >
             <div className="space-y-4">
               {navLinks.map((link) => {
                 const Icon = link.icon;
@@ -141,7 +193,7 @@ export default function PokemonNavbar() {
                   >
                     <Button
                       variant="ghost"
-                      className={`w-full justify-start px-4 py-3 rounded-lg transition-all duration-200 ${
+                      className={`mobile-nav-item w-full justify-start px-4 py-3 rounded-lg transition-all duration-200 ${
                         isActive(link.href)
                           ? "bg-primary/10 text-primary"
                           : "text-foreground hover:text-primary hover:bg-primary/5"

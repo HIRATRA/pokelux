@@ -82,7 +82,7 @@ export default function SearchPage() {
   const getRandomPokemon = async () => {
     setIsLoading(true);
     const randomIds = Array.from(
-      { length: 9 },
+      { length: 12 },
       () => Math.floor(Math.random() * 1010) + 1
     );
 
@@ -162,7 +162,7 @@ export default function SearchPage() {
               className="px-8 py-3 bg-accent hover:bg-accent/90 glow-primary rounded-full font-semibold"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Random 9
+              Random 12
             </Button>
           </div>
 
