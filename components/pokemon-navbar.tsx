@@ -36,7 +36,7 @@ export default function PokemonNavbar() {
 
       gsap.fromTo(
         mobileMenuRef.current.querySelectorAll(".mobile-nav-item"),
-        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0 },
         { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, ease: "power3.out" }
       );
     }

@@ -20,7 +20,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PokéLux - Luxury Pokémon Experience",
+  title: "PokéLux",
   description: "A luxurious dark-mode Pokémon website with premium animations",
   generator: "v0.app",
 };
