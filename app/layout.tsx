@@ -4,6 +4,7 @@ import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { FavoritesProvider } from "@/hooks/use-favorites";
 import PageTransition from "@/components/page-transition";
+import { FooterWrapper } from "@/components/navigation/FooterWrapper";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ html {
         <FavoritesProvider>
           <PageTransition>{children}</PageTransition>
         </FavoritesProvider>
+        <FooterWrapper />
       </body>
     </html>
   );

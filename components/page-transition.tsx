@@ -14,8 +14,17 @@ export default function PageTransition({
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  // Définis les routes exclues
+  const excludedPaths = ["/favorites", "/comparison", "/search"];
 
   useEffect(() => {
+    // Si le pathname fait partie des exceptions, on ne lance pas l’animation
+    if (excludedPaths.includes(pathname)) {
+      if (containerRef.current) {
+        gsap.set(containerRef.current, { opacity: 1 });
+      }
+      return;
+    }
     if (overlayRef.current && containerRef.current) {
       gsap.set(overlayRef.current, { x: "100%" });
       gsap.set(containerRef.current, { opacity: 0 });
