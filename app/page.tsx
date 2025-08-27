@@ -123,7 +123,12 @@ export default function LandingPage() {
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
     >
       <div ref={backgroundRef} className="absolute inset-0">
-        {/* Floating orbs */}
+        {/* Cristaux translucides */}
+        <div className="floating-orb absolute w-32 h-32 clip-crystal bg-white/5 backdrop-blur-md border border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.2)]"></div>
+        <div className="floating-orb absolute w-40 h-40 clip-crystal bg-white/10 backdrop-blur-lg border border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.25)]"></div>
+        <div className="floating-orb absolute w-28 h-28 clip-crystal bg-white/7 backdrop-blur-md border border-white/15 shadow-[0_0_20px_rgba(255,255,255,0.15)]"></div>
+
+        {/* Floating orbs existants */}
         <div className="floating-orb absolute w-32 h-32 rounded-full bg-primary/20 blur-3xl bg-pulse"></div>
         <div className="floating-orb absolute w-40 h-40 rounded-full bg-accent/15 blur-3xl bg-pulse"></div>
         <div className="floating-orb absolute w-24 h-24 rounded-full bg-chart-1/25 blur-3xl bg-pulse"></div>
