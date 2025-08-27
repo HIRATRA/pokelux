@@ -21,9 +21,7 @@ interface Pokemon {
   };
   stats: Array<{
     base_stat: number;
-    stat: {
-      name: string;
-    };
+    stat: { name: string };
   }>;
   height: number;
   weight: number;
@@ -35,27 +33,6 @@ export default function SearchPage() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const resultsRef = useRef<HTMLDivElement>(null);
-
-  const pokemonTypes = [
-    "normal",
-    "fire",
-    "water",
-    "electric",
-    "grass",
-    "ice",
-    "fighting",
-    "poison",
-    "ground",
-    "flying",
-    "psychic",
-    "bug",
-    "rock",
-    "ghost",
-    "dragon",
-    "dark",
-    "steel",
-    "fairy",
-  ];
 
   const searchPokemon = async (query: string) => {
     if (!query.trim()) return;
@@ -118,12 +95,20 @@ export default function SearchPage() {
     }
   };
 
+  // Filtrage dynamique en fonction des types sélectionnés
   const filteredResults = searchResults.filter((pokemon) => {
     if (selectedTypes.length === 0) return true;
     return pokemon.types.some((typeObj) =>
       selectedTypes.includes(typeObj.type.name)
     );
   });
+
+  // Types disponibles uniquement pour les Pokémon affichés
+  const availableTypes = Array.from(
+    new Set(
+      searchResults.flatMap((pokemon) => pokemon.types.map((t) => t.type.name))
+    )
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,9 +151,9 @@ export default function SearchPage() {
             </Button>
           </div>
 
-          {/* Filters */}
+          {/* Dynamic Filters */}
           <FilterPanel
-            types={pokemonTypes}
+            types={availableTypes}
             selectedTypes={selectedTypes}
             onTypesChange={setSelectedTypes}
           />
