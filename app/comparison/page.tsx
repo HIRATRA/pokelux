@@ -2,9 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
-// import PokemonNavbar from "@/components/pokemon-navbar";
-// import PokemonSelector from "@/components/pokemon-selector";
-// import PokemonComparison from "@/components/pokemon-comparison";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shuffle, Zap } from "lucide-react";
@@ -15,24 +12,13 @@ import PokemonComparison from "@/components/pokemon-comparison";
 interface Pokemon {
   id: number;
   name: string;
-  types: Array<{
-    type: {
-      name: string;
-    };
-  }>;
+  types: Array<{ type: { name: string } }>;
   sprites: {
     other: {
-      "official-artwork": {
-        front_default: string;
-      };
+      "official-artwork": { front_default: string };
     };
   };
-  stats: Array<{
-    base_stat: number;
-    stat: {
-      name: string;
-    };
-  }>;
+  stats: Array<{ base_stat: number; stat: { name: string } }>;
   height: number;
   weight: number;
   base_experience: number;
@@ -54,39 +40,62 @@ export default function ComparisonPage() {
     }
   }, [pokemon1, pokemon2]);
 
+  const fetchPokemon = async (id: number): Promise<Pokemon | null> => {
+    try {
+      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      if (!response.ok)
+        throw new Error(`Failed to fetch Pokémon with id ${id}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  };
+
+  // Comparaison aléatoire
   const handleRandomComparison = async () => {
     setIsLoading(true);
     try {
       const randomId1 = Math.floor(Math.random() * 1010) + 1;
-      const randomId2 = Math.floor(Math.random() * 1010) + 1;
 
-      const [response1, response2] = await Promise.all([
-        fetch(`https://pokeapi.co/api/v2/pokemon/${randomId1}`),
-        fetch(`https://pokeapi.co/api/v2/pokemon/${randomId2}`),
-      ]);
+      // Assurer que les deux IDs sont différents
+      let randomId2;
+      do {
+        randomId2 = Math.floor(Math.random() * 1010) + 1;
+      } while (randomId2 === randomId1);
 
       const [data1, data2] = await Promise.all([
-        response1.json(),
-        response2.json(),
+        fetchPokemon(randomId1),
+        fetchPokemon(randomId2),
       ]);
 
-      setPokemon1(data1);
-      setPokemon2(data2);
+      if (data1 && data2) {
+        setPokemon1(data1);
+        setPokemon2(data2);
+      } else {
+        console.warn("One of the Pokémon could not be fetched properly.");
+      }
     } catch (error) {
-      console.error("Error fetching random Pokemon:", error);
+      console.error("Error fetching random Pokémon:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
+  // Réinitialiser
   const clearComparison = () => {
     setPokemon1(null);
     setPokemon2(null);
   };
 
+  // Swap avec protection
   const swapPokemon = () => {
-    const temp = pokemon1;
-    setPokemon1(pokemon2);
-    setPokemon2(temp);
+    if (pokemon1 && pokemon2) {
+      const temp = pokemon1;
+      setPokemon1(pokemon2);
+      setPokemon2(temp);
+    }
   };
 
   return (
@@ -97,16 +106,10 @@ export default function ComparisonPage() {
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1
-              className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-chart-1 bg-clip-text text-transparent"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
+            <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-chart-1 bg-clip-text text-transparent">
               Pokémon Comparison
             </h1>
-            <p
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Compare two Pokémon side-by-side to see their strengths and
               weaknesses
             </p>
@@ -118,27 +121,26 @@ export default function ComparisonPage() {
               onClick={handleRandomComparison}
               disabled={isLoading}
               className="px-6 py-3 bg-accent hover:bg-accent/90 glow-primary rounded-full font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
             >
               <Shuffle className="w-4 h-4 mr-2" />
               Random Battle
             </Button>
+
             {(pokemon1 || pokemon2) && (
               <Button
                 onClick={clearComparison}
                 variant="outline"
                 className="px-6 py-3 rounded-full font-semibold bg-transparent"
-                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Clear All
               </Button>
             )}
+
             {pokemon1 && pokemon2 && (
               <Button
                 onClick={swapPokemon}
                 variant="outline"
                 className="px-6 py-3 rounded-full font-semibold bg-transparent"
-                style={{ fontFamily: "var(--font-heading)" }}
               >
                 <Shuffle className="w-4 h-4 mr-2" />
                 Swap
@@ -146,14 +148,11 @@ export default function ComparisonPage() {
             )}
           </div>
 
-          {/* Pokemon Selectors */}
+          {/* Pokémon Selectors */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle
-                  className="text-center"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
+                <CardTitle className="text-center">
                   <Zap className="w-5 h-5 inline mr-2 text-primary" />
                   Fighter 1
                 </CardTitle>
@@ -161,17 +160,19 @@ export default function ComparisonPage() {
               <CardContent>
                 <PokemonSelector
                   selectedPokemon={pokemon1}
-                  onPokemonSelect={setPokemon1}
+                  // onPokemonSelect={(p) =>
+                  //   p?.id !== pokemon2?.id ? setPokemon1(p) : null
+                  // }
+                  onPokemonSelect={(p) =>
+                    !p || p?.id !== pokemon2?.id ? setPokemon1(p) : null
+                  }
                 />
               </CardContent>
             </Card>
 
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle
-                  className="text-center"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
+                <CardTitle className="text-center">
                   <Zap className="w-5 h-5 inline mr-2 text-accent" />
                   Fighter 2
                 </CardTitle>
@@ -179,7 +180,12 @@ export default function ComparisonPage() {
               <CardContent>
                 <PokemonSelector
                   selectedPokemon={pokemon2}
-                  onPokemonSelect={setPokemon2}
+                  // onPokemonSelect={(p) =>
+                  //   p?.id !== pokemon1?.id ? setPokemon2(p) : null
+                  // }
+                  onPokemonSelect={(p) =>
+                    !p || p?.id !== pokemon1?.id ? setPokemon2(p) : null
+                  }
                 />
               </CardContent>
             </Card>
@@ -213,19 +219,13 @@ export default function ComparisonPage() {
           {!pokemon1 && !pokemon2 && !isLoading && (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">⚔️</div>
-              <h3
-                className="text-2xl font-bold mb-2"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Ready for Battle?
-              </h3>
+              <h3 className="text-2xl font-bold mb-2">Ready for Battle?</h3>
               <p className="text-muted-foreground mb-6">
                 Select two Pokémon to compare their stats and abilities
               </p>
               <Button
                 onClick={handleRandomComparison}
                 className="px-8 py-3 bg-primary hover:bg-primary/90 glow-primary rounded-full font-semibold"
-                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Start Random Battle
               </Button>
