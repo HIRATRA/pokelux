@@ -5,6 +5,7 @@ import "./globals.css";
 import { FavoritesProvider } from "@/hooks/use-favorites";
 import PageTransition from "@/components/page-transition";
 import { FooterWrapper } from "@/components/navigation/FooterWrapper";
+import BackToTop from "@/components/navigation/back-to-top";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -23,7 +24,6 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "PokéLux",
   description: "A luxurious dark-mode Pokémon website with premium animations",
-  generator: "v0.app",
 };
 
 export default function RootLayout({
@@ -45,6 +45,7 @@ html {
       <body
         className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}
       >
+        <BackToTop />
         <FavoritesProvider>
           <PageTransition>{children}</PageTransition>
         </FavoritesProvider>
