@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import PokemonNavbar from "@/components/pokemon-navbar";
 import SearchBar from "@/components/search-bar";
@@ -33,6 +33,60 @@ export default function SearchPage() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Refs pour animations
+  const headerRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Animation des textes (titre + sous-titre)
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current.children,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.2,
+          ease: "power3.out",
+        }
+      );
+    }
+
+    // Animation de la barre de recherche
+    if (searchBarRef.current) {
+      gsap.fromTo(
+        searchBarRef.current,
+        { opacity: 0, scale: 0.8 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          delay: 0.4,
+          ease: "back.out(1.7)",
+        }
+      );
+    }
+
+    // Animation des boutons
+    if (buttonRef.current) {
+      gsap.fromTo(
+        buttonRef.current.children,
+        { opacity: 0, y: 20, scale: 0.9 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          delay: 0.6,
+          stagger: 0.2,
+          ease: "elastic.out(1, 0.5)",
+        }
+      );
+    }
+  }, []);
 
   const searchPokemon = async (query: string) => {
     if (!query.trim()) return;
@@ -95,7 +149,7 @@ export default function SearchPage() {
     }
   };
 
-  // Filtrage dynamique en fonction des types sélectionnés
+  // Filtrage dynamique
   const filteredResults = searchResults.filter((pokemon) => {
     if (selectedTypes.length === 0) return true;
     return pokemon.types.some((typeObj) =>
@@ -103,7 +157,7 @@ export default function SearchPage() {
     );
   });
 
-  // Types disponibles uniquement pour les Pokémon affichés
+  // Types disponibles
   const availableTypes = Array.from(
     new Set(
       searchResults.flatMap((pokemon) => pokemon.types.map((t) => t.type.name))
@@ -117,7 +171,7 @@ export default function SearchPage() {
       <div className="pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-12" ref={headerRef}>
             <h1
               className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-chart-1 bg-clip-text text-transparent"
               style={{ fontFamily: "var(--font-heading)" }}
@@ -134,21 +188,26 @@ export default function SearchPage() {
           </div>
 
           {/* Search and Random Section */}
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-center mb-8">
+          <div
+            className="flex flex-col md:flex-row gap-4 items-center justify-center mb-8"
+            ref={searchBarRef}
+          >
             <SearchBar
               onSearch={searchPokemon}
               value={searchQuery}
               onChange={setSearchQuery}
               isLoading={isLoading}
             />
-            <Button
-              onClick={getRandomPokemon}
-              disabled={isLoading}
-              className="px-8 py-3 bg-accent hover:bg-accent/90 glow-primary rounded-full font-semibold"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Random 12
-            </Button>
+            <div ref={buttonRef} className="flex gap-4">
+              <Button
+                onClick={getRandomPokemon}
+                disabled={isLoading}
+                className="px-8 py-3 bg-accent hover:bg-accent/90 glow-primary rounded-full font-semibold"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                Random 12
+              </Button>
+            </div>
           </div>
 
           {/* Dynamic Filters */}
