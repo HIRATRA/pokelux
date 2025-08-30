@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { gsap } from "gsap";
 
 interface FilterPanelProps {
   types: string[];
@@ -36,6 +38,41 @@ export default function FilterPanel({
   selectedTypes,
   onTypesChange,
 }: FilterPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const badgesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Animation du panel (scale fluide)
+    if (panelRef.current) {
+      gsap.fromTo(
+        panelRef.current,
+        { opacity: 0, scale: 0.9 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "power2.out",
+        }
+      );
+    }
+
+    // Animation des badges en cascade avec scale
+    if (badgesRef.current) {
+      gsap.fromTo(
+        badgesRef.current.children,
+        { opacity: 0, scale: 0.8 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.08,
+          ease: "power3.out",
+          delay: 0.2,
+        }
+      );
+    }
+  }, []);
+
   const toggleType = (type: string) => {
     if (selectedTypes.includes(type)) {
       onTypesChange(selectedTypes.filter((t) => t !== type));
@@ -48,12 +85,14 @@ export default function FilterPanel({
     onTypesChange([]);
   };
 
-  const capitalizeFirst = (str: string) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
+  const capitalizeFirst = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 mb-8">
+    <div
+      ref={panelRef}
+      className="bg-card border border-border rounded-lg p-6 mb-8"
+    >
       <div className="flex items-center justify-between mb-4">
         <h3
           className="text-lg font-semibold text-card-foreground"
@@ -74,7 +113,7 @@ export default function FilterPanel({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" ref={badgesRef}>
         {types.map((type) => (
           <Badge
             key={type}
