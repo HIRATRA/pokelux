@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { gsap } from "gsap";
 import PokemonNavbar from "@/components/pokemon-navbar";
 import SearchBar from "@/components/search-bar";
@@ -14,20 +14,21 @@ interface Pokemon {
   types: { type: { name: string } }[];
   sprites: {
     other: {
-      "official-artwork": {
-        front_default: string;
-      };
+      "official-artwork": { front_default: string };
     };
   };
-  stats: Array<{
-    base_stat: number;
-    stat: { name: string };
-  }>;
+  stats: { base_stat: number; stat: { name: string } }[];
   height: number;
   weight: number;
 }
 
+interface PokemonListItem {
+  name: string;
+  url: string;
+}
+
 export default function SearchPage() {
+  const [allPokemonList, setAllPokemonList] = useState<PokemonListItem[]>([]);
   const [searchResults, setSearchResults] = useState<Pokemon[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -39,23 +40,31 @@ export default function SearchPage() {
   const searchBarRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
 
+  // Charger la liste complète des Pokémon au montage
   useEffect(() => {
-    // Animation des textes (titre + sous-titre)
+    const fetchAllPokemon = async () => {
+      try {
+        const response = await fetch(
+          "https://pokeapi.co/api/v2/pokemon?limit=1010"
+        );
+        const data = await response.json();
+        setAllPokemonList(data.results);
+      } catch (error) {
+        console.error("Error fetching all Pokémon list:", error);
+      }
+    };
+    fetchAllPokemon();
+  }, []);
+
+  // Animations
+  useEffect(() => {
     if (headerRef.current) {
       gsap.fromTo(
         headerRef.current.children,
         { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: "power3.out",
-        }
+        { opacity: 1, y: 0, duration: 0.8, stagger: 0.2, ease: "power3.out" }
       );
     }
-
-    // Animation de la barre de recherche
     if (searchBarRef.current) {
       gsap.fromTo(
         searchBarRef.current,
@@ -69,8 +78,6 @@ export default function SearchPage() {
         }
       );
     }
-
-    // Animation des boutons
     if (buttonRef.current) {
       gsap.fromTo(
         buttonRef.current.children,
@@ -88,27 +95,45 @@ export default function SearchPage() {
     }
   }, []);
 
-  const searchPokemon = async (query: string) => {
-    if (!query.trim()) return;
+  // Recherche locale + fetch détails des résultats
+  const searchPokemon = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `https://pokeapi.co/api/v2/pokemon/${query.toLowerCase()}`
-      );
-      if (response.ok) {
-        const pokemon = await response.json();
-        setSearchResults([pokemon]);
+      setIsLoading(true);
+      try {
+        // Filtrer la liste des noms
+        const matched = allPokemonList
+          .filter((p) => p.name.toLowerCase().startsWith(query.toLowerCase()))
+          .slice(0, 12); // Limiter à 12 pour éviter trop de fetch
+
+        // Fetch des détails pour chaque Pokémon
+        const detailed = await Promise.all(
+          matched.map(async (p) => {
+            const res = await fetch(p.url);
+            return res.json() as Promise<Pokemon>;
+          })
+        );
+
+        setSearchResults(detailed);
         animateResults();
-      } else {
+      } catch (error) {
+        console.error("Error searching Pokémon:", error);
         setSearchResults([]);
       }
-    } catch (error) {
-      console.error("Error searching Pokemon:", error);
-      setSearchResults([]);
-    }
-    setIsLoading(false);
-  };
+      setIsLoading(false);
+    },
+    [allPokemonList]
+  );
+
+  // Debounce
+  useEffect(() => {
+    const timer = setTimeout(() => searchPokemon(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchPokemon]);
 
   const getRandomPokemon = async () => {
     setIsLoading(true);
@@ -118,16 +143,17 @@ export default function SearchPage() {
     );
 
     try {
-      const promises = randomIds.map((id) =>
-        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((res) =>
-          res.json()
+      const results = await Promise.all(
+        randomIds.map((id) =>
+          fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((res) =>
+            res.json()
+          )
         )
       );
-      const results = await Promise.all(promises);
       setSearchResults(results);
       animateResults();
     } catch (error) {
-      console.error("Error fetching random Pokemon:", error);
+      console.error("Error fetching random Pokémon:", error);
     }
     setIsLoading(false);
   };
@@ -152,22 +178,22 @@ export default function SearchPage() {
   // Filtrage dynamique
   const filteredResults = searchResults.filter((pokemon) => {
     if (selectedTypes.length === 0) return true;
-    return pokemon.types.some((typeObj) =>
+    return pokemon.types.some((typeObj: { type: { name: string } }) =>
       selectedTypes.includes(typeObj.type.name)
     );
   });
 
-  // Types disponibles
   const availableTypes = Array.from(
     new Set(
-      searchResults.flatMap((pokemon) => pokemon.types.map((t) => t.type.name))
+      searchResults.flatMap((pokemon) =>
+        pokemon.types.map((t: { type: { name: string } }) => t.type.name)
+      )
     )
   );
 
   return (
     <div className="min-h-screen bg-background">
       <PokemonNavbar />
-
       <div className="pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
@@ -187,7 +213,7 @@ export default function SearchPage() {
             </p>
           </div>
 
-          {/* Search and Random Section */}
+          {/* Search & Random */}
           <div
             className="flex flex-col md:flex-row gap-4 items-center justify-center mb-8"
             ref={searchBarRef}
@@ -210,14 +236,14 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Dynamic Filters */}
+          {/* Filter Panel */}
           <FilterPanel
             types={availableTypes}
             selectedTypes={selectedTypes}
             onTypesChange={setSelectedTypes}
           />
 
-          {/* Results */}
+          {/* Loading */}
           {isLoading && (
             <div className="flex justify-center items-center py-20">
               <div className="flex space-x-2">
@@ -234,6 +260,7 @@ export default function SearchPage() {
             </div>
           )}
 
+          {/* Results */}
           {!isLoading && filteredResults.length > 0 && (
             <div
               ref={resultsRef}
@@ -245,6 +272,7 @@ export default function SearchPage() {
             </div>
           )}
 
+          {/* No results */}
           {!isLoading &&
             searchQuery &&
             filteredResults.length === 0 &&
