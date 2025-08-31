@@ -95,7 +95,7 @@ export default function SearchPage() {
     }
   }, []);
 
-  // Recherche locale + fetch détails des résultats
+  // Recherche par nom ou par ID
   const searchPokemon = useCallback(
     async (query: string) => {
       if (!query.trim()) {
@@ -105,21 +105,34 @@ export default function SearchPage() {
 
       setIsLoading(true);
       try {
-        // Filtrer la liste des noms
-        const matched = allPokemonList
-          .filter((p) => p.name.toLowerCase().startsWith(query.toLowerCase()))
-          .slice(0, 12); // Limiter à 12 pour éviter trop de fetch
+        // Si l'utilisateur tape un ID numérique
+        if (/^\d+$/.test(query.trim())) {
+          const res = await fetch(
+            `https://pokeapi.co/api/v2/pokemon/${query.trim()}`
+          );
+          if (res.ok) {
+            const pokemon: Pokemon = await res.json();
+            setSearchResults([pokemon]);
+            animateResults();
+          } else {
+            setSearchResults([]);
+          }
+        } else {
+          // Recherche par nom (début du nom)
+          const matched = allPokemonList
+            .filter((p) => p.name.toLowerCase().startsWith(query.toLowerCase()))
+            .slice(0, 12);
 
-        // Fetch des détails pour chaque Pokémon
-        const detailed = await Promise.all(
-          matched.map(async (p) => {
-            const res = await fetch(p.url);
-            return res.json() as Promise<Pokemon>;
-          })
-        );
+          const detailed = await Promise.all(
+            matched.map(async (p) => {
+              const res = await fetch(p.url);
+              return res.json() as Promise<Pokemon>;
+            })
+          );
 
-        setSearchResults(detailed);
-        animateResults();
+          setSearchResults(detailed);
+          animateResults();
+        }
       } catch (error) {
         console.error("Error searching Pokémon:", error);
         setSearchResults([]);
@@ -129,8 +142,10 @@ export default function SearchPage() {
     [allPokemonList]
   );
 
-  // Debounce
+  // Debounce pour recherche instantanée sur nom
   useEffect(() => {
+    // Si la query est un nombre, ne pas déclencher le debounce automatique
+    if (/^\d+$/.test(searchQuery.trim())) return;
     const timer = setTimeout(() => searchPokemon(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery, searchPokemon]);
@@ -219,7 +234,7 @@ export default function SearchPage() {
             ref={searchBarRef}
           >
             <SearchBar
-              onSearch={searchPokemon}
+              onSearch={() => searchPokemon(searchQuery)} // bouton search
               value={searchQuery}
               onChange={setSearchQuery}
               isLoading={isLoading}
