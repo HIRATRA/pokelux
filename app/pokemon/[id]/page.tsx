@@ -14,51 +14,29 @@ import Image from "next/image";
 interface PokemonDetails {
   id: number;
   name: string;
-  types: Array<{
-    type: {
-      name: string;
-    };
-  }>;
+  types: { type: { name: string } }[];
   sprites: {
     other: {
-      "official-artwork": {
-        front_default: string;
-      };
-      home: {
-        front_default: string;
-      };
+      "official-artwork": { front_default: string };
+      home: { front_default: string };
     };
   };
-  stats: Array<{
-    base_stat: number;
-    stat: {
-      name: string;
-    };
-  }>;
-  abilities: Array<{
-    ability: {
-      name: string;
-    };
-    is_hidden: boolean;
-  }>;
+  stats: { base_stat: number; stat: { name: string } }[];
+  abilities: { ability: { name: string }; is_hidden: boolean }[];
   height: number;
   weight: number;
   base_experience: number;
-  species: {
-    url: string;
-  };
+  species: { url: string };
 }
 
 interface Species {
-  flavor_text_entries: Array<{
-    flavor_text: string;
-    language: {
-      name: string;
-    };
-  }>;
-  evolution_chain: {
-    url: string;
-  };
+  flavor_text_entries: { flavor_text: string; language: { name: string } }[];
+  evolution_chain: { url: string };
+}
+
+interface EvolutionChain {
+  species: { name: string; url: string };
+  evolves_to: EvolutionChain[];
 }
 
 const typeColors: Record<string, string> = {
@@ -87,6 +65,9 @@ export default function PokemonDetailsPage() {
   const router = useRouter();
   const [pokemon, setPokemon] = useState<PokemonDetails | null>(null);
   const [species, setSpecies] = useState<Species | null>(null);
+  const [evolutions, setEvolutions] = useState<{ name: string; url: string }[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const { isFavorite, toggleFavorite } = useFavorites();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,22 +80,22 @@ export default function PokemonDetailsPage() {
       try {
         setIsLoading(true);
 
-        // Fetch main Pokemon data
         const pokemonResponse = await fetch(
           `https://pokeapi.co/api/v2/pokemon/${params.id}`
         );
-        const pokemonData = await pokemonResponse.json();
+        const pokemonData: PokemonDetails = await pokemonResponse.json();
         setPokemon(pokemonData);
 
-        // Fetch species data for description
         const speciesResponse = await fetch(pokemonData.species.url);
-        const speciesData = await speciesResponse.json();
+        const speciesData: Species = await speciesResponse.json();
         setSpecies(speciesData);
 
-        // Animate page entrance
-        setTimeout(() => {
-          animatePageEntrance();
-        }, 100);
+        const evolutionResponse = await fetch(speciesData.evolution_chain.url);
+        const evolutionData: { chain: EvolutionChain } =
+          await evolutionResponse.json();
+        setEvolutions(extractEvolutions(evolutionData.chain));
+
+        setTimeout(() => animatePageEntrance(), 100);
       } catch (error) {
         console.error("Error fetching Pokemon details:", error);
       } finally {
@@ -125,9 +106,20 @@ export default function PokemonDetailsPage() {
     fetchPokemonDetails();
   }, [params.id]);
 
+  const extractEvolutions = (
+    chain: EvolutionChain
+  ): { name: string; url: string }[] => {
+    const evoArr: { name: string; url: string }[] = [];
+    let current: EvolutionChain | null = chain;
+    while (current) {
+      evoArr.push(current.species);
+      current = current.evolves_to.length > 0 ? current.evolves_to[0] : null;
+    }
+    return evoArr;
+  };
+
   const animatePageEntrance = () => {
     const tl = gsap.timeline();
-
     tl.fromTo(
       imageRef.current,
       { opacity: 0, scale: 0.5, rotation: -10 },
@@ -146,9 +138,8 @@ export default function PokemonDetailsPage() {
     );
   };
 
-  const capitalizeFirst = (str: string) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
+  const capitalizeFirst = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
 
   const getStatColor = (statValue: number) => {
     if (statValue >= 100) return "bg-green-500";
@@ -166,12 +157,10 @@ export default function PokemonDetailsPage() {
   };
 
   const handleToggleFavorite = () => {
-    if (pokemon) {
-      toggleFavorite(pokemon);
-    }
+    if (pokemon) toggleFavorite(pokemon);
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="min-h-screen bg-background">
         <PokemonNavbar />
@@ -190,9 +179,8 @@ export default function PokemonDetailsPage() {
         </div>
       </div>
     );
-  }
 
-  if (!pokemon) {
+  if (!pokemon)
     return (
       <div className="min-h-screen bg-background">
         <PokemonNavbar />
@@ -206,44 +194,39 @@ export default function PokemonDetailsPage() {
         </div>
       </div>
     );
-  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <PokemonNavbar />
-
-      <div className="pt-24 pb-12">
+      <div className="pt-24 pb-12 flex-1">
         <div className="max-w-6xl mx-auto px-6">
-          {/* Back Button */}
           <Button
             onClick={() => router.back()}
             variant="ghost"
             className="mb-6 text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Search
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Search
           </Button>
 
           <div
             ref={containerRef}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full"
           >
-            {/* Left Column - Image and Basic Info */}
+            {/* Left Column */}
             <div className="space-y-6">
-              {/* Main Image Card */}
               <Card className="detail-card bg-card border-border overflow-hidden">
                 <CardContent className="p-8 text-center">
                   <div className="relative">
-                    <img
+                    <Image
                       ref={imageRef}
                       src={
                         pokemon.sprites.other["home"].front_default ||
-                        "/placeholder.svg?height=300&width=300" ||
-                        "/placeholder.svg" ||
                         "/placeholder.svg"
                       }
                       alt={pokemon.name}
-                      className="w-64 h-64 mx-auto object-contain"
+                      width={256}
+                      height={256}
+                      className="mx-auto object-contain"
                     />
                     <Button
                       variant="ghost"
@@ -262,7 +245,6 @@ export default function PokemonDetailsPage() {
                       />
                     </Button>
                   </div>
-
                   <div className="mt-6">
                     <h1
                       className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
@@ -273,17 +255,15 @@ export default function PokemonDetailsPage() {
                     <p className="text-lg text-muted-foreground">
                       #{pokemon.id.toString().padStart(3, "0")}
                     </p>
-
-                    {/* Types */}
-                    <div className="flex justify-center gap-2 mt-4">
-                      {pokemon.types.map((type) => (
+                    <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                      {pokemon.types.map((t) => (
                         <Badge
-                          key={type.type.name}
+                          key={t.type.name}
                           className={`${
-                            typeColors[type.type.name]
+                            typeColors[t.type.name]
                           } text-white border-0 text-sm font-medium px-4 py-1`}
                         >
-                          {capitalizeFirst(type.type.name)}
+                          {capitalizeFirst(t.type.name)}
                         </Badge>
                       ))}
                     </div>
@@ -298,8 +278,7 @@ export default function PokemonDetailsPage() {
                     className="flex items-center gap-2"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
-                    <Scale className="w-5 h-5 text-primary" />
-                    Physical Stats
+                    <Scale className="w-5 h-5 text-primary" /> Physical Stats
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -331,8 +310,8 @@ export default function PokemonDetailsPage() {
               </Card>
             </div>
 
-            {/* Right Column - Stats and Details */}
-            <div className="space-y-6">
+            {/* Right Column */}
+            <div className="flex flex-col space-y-6 h-full">
               {/* Description */}
               {species && (
                 <Card className="detail-card bg-card border-border">
@@ -352,7 +331,7 @@ export default function PokemonDetailsPage() {
                 </Card>
               )}
 
-              {/* Stats */}
+              {/* Base Stats */}
               <Card className="detail-card bg-card border-border">
                 <CardHeader>
                   <CardTitle style={{ fontFamily: "var(--font-heading)" }}>
@@ -393,27 +372,67 @@ export default function PokemonDetailsPage() {
                     Abilities
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {pokemon.abilities.map((ability, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Badge
-                          variant={ability.is_hidden ? "secondary" : "outline"}
-                        >
-                          {capitalizeFirst(
-                            ability.ability.name.replace("-", " ")
-                          )}
-                        </Badge>
-                        {ability.is_hidden && (
-                          <span className="text-xs text-muted-foreground">
-                            (Hidden)
-                          </span>
+                <CardContent className="flex flex-col gap-2">
+                  {pokemon.abilities.map((ability, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Badge
+                        variant={ability.is_hidden ? "secondary" : "outline"}
+                      >
+                        {capitalizeFirst(
+                          ability.ability.name.replace("-", " ")
                         )}
-                      </div>
-                    ))}
-                  </div>
+                      </Badge>
+                      {ability.is_hidden && (
+                        <span className="text-xs text-muted-foreground">
+                          (Hidden)
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
+
+              {/* Evolution Chain */}
+              {evolutions.length > 1 && (
+                <Card className="detail-card bg-card border-border mt-auto">
+                  <CardHeader>
+                    <CardTitle style={{ fontFamily: "var(--font-heading)" }}>
+                      Evolution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap justify-center items-center gap-8 w-full">
+                      {evolutions.map((evo, index) => (
+                        <div
+                          key={evo.name}
+                          className="flex flex-col items-center relative"
+                        >
+                          <div className="bg-card/80 border border-border rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-300 w-[120px] h-[120px] flex items-center justify-center">
+                            <Image
+                              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${
+                                evo.url.split("/")[6]
+                              }.png`}
+                              alt={evo.name}
+                              width={100}
+                              height={100}
+                              className="object-contain"
+                            />
+                          </div>
+                          <p className="mt-2 font-medium text-center">
+                            {capitalizeFirst(evo.name)}
+                          </p>
+
+                          {index < evolutions.length - 1 && (
+                            <div className="absolute right-[-2.5rem] top-1/2 transform -translate-y-1/2 text-2xl text-muted-foreground hidden sm:block">
+                              ➡️
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
