@@ -32,6 +32,7 @@ interface PokemonDetails {
 interface Species {
   flavor_text_entries: { flavor_text: string; language: { name: string } }[];
   evolution_chain: { url: string };
+  varieties: { is_default: boolean; pokemon: { name: string; url: string } }[];
 }
 
 interface EvolutionChain {
@@ -68,6 +69,9 @@ export default function PokemonDetailsPage() {
   const [evolutions, setEvolutions] = useState<{ name: string; url: string }[]>(
     []
   );
+  const [megaForms, setMegaForms] = useState<
+    { name: string; sprite: string }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isFavorite, toggleFavorite } = useFavorites();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,10 +94,27 @@ export default function PokemonDetailsPage() {
         const speciesData: Species = await speciesResponse.json();
         setSpecies(speciesData);
 
+        // Evolution chain
         const evolutionResponse = await fetch(speciesData.evolution_chain.url);
         const evolutionData: { chain: EvolutionChain } =
           await evolutionResponse.json();
         setEvolutions(extractEvolutions(evolutionData.chain));
+
+        // Mega Evolutions
+        const megaCandidates = speciesData.varieties.filter((v) =>
+          v.pokemon.name.includes("mega")
+        );
+        const megaData = await Promise.all(
+          megaCandidates.map(async (v) => {
+            const res = await fetch(v.pokemon.url);
+            const data = await res.json();
+            return {
+              name: v.pokemon.name,
+              sprite: data.sprites.other["home"].front_default,
+            };
+          })
+        );
+        setMegaForms(megaData);
 
         setTimeout(() => animatePageEntrance(), 100);
       } catch (error) {
@@ -224,8 +245,8 @@ export default function PokemonDetailsPage() {
                         "/placeholder.svg"
                       }
                       alt={pokemon.name}
-                      width={256}
-                      height={256}
+                      width={280}
+                      height={280}
                       className="mx-auto object-contain"
                     />
                     <Button
@@ -270,6 +291,40 @@ export default function PokemonDetailsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Mega Evolutions */}
+              {megaForms.length > 0 && (
+                <Card className="detail-card bg-card border-border">
+                  <CardHeader>
+                    <CardTitle style={{ fontFamily: "var(--font-heading)" }}>
+                      Mega Evolutions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap justify-center gap-8">
+                      {megaForms.map((mega) => (
+                        <div
+                          key={mega.name}
+                          className="flex flex-col items-center"
+                        >
+                          <Image
+                            src={mega.sprite}
+                            alt={mega.name}
+                            width={150}
+                            height={150}
+                            className="object-contain"
+                          />
+                          <p className="text-sm mt-1 font-medium">
+                            {capitalizeFirst(
+                              mega.name.replace("mega-", "Mega ")
+                            )}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Physical Stats */}
               <Card className="detail-card bg-card border-border">
@@ -421,12 +476,11 @@ export default function PokemonDetailsPage() {
                           <p className="mt-2 font-medium text-center">
                             {capitalizeFirst(evo.name)}
                           </p>
-
-                          {index < evolutions.length - 1 && (
+                          {/* {index < evolutions.length - 1 && (
                             <div className="absolute right-[-2.5rem] top-1/2 transform -translate-y-1/2 text-2xl text-muted-foreground hidden sm:block">
                               ➡️
                             </div>
-                          )}
+                          )} */}
                         </div>
                       ))}
                     </div>
