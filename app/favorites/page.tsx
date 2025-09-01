@@ -12,8 +12,11 @@ import Link from "next/link";
 export default function FavoritesPage() {
   const { favorites } = useFavorites();
   const gridRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const emptyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Animation des cartes favorites
     if (favorites.length > 0 && gridRef.current) {
       gsap.fromTo(
         gridRef.current.children,
@@ -28,6 +31,36 @@ export default function FavoritesPage() {
         }
       );
     }
+
+    // Animation du header
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current.children,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.2,
+          ease: "power2.out",
+        }
+      );
+    }
+
+    // Animation de l'état vide
+    if (favorites.length === 0 && emptyRef.current) {
+      gsap.fromTo(
+        emptyRef.current.children,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.2,
+          ease: "power2.out",
+        }
+      );
+    }
   }, [favorites.length]);
 
   return (
@@ -37,7 +70,7 @@ export default function FavoritesPage() {
       <div className="pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div ref={headerRef} className="text-center mb-12">
             <h1
               className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-accent to-chart-1 bg-clip-text text-transparent"
               style={{ fontFamily: "var(--font-heading)" }}
@@ -79,7 +112,7 @@ export default function FavoritesPage() {
             </div>
           ) : (
             /* Empty State */
-            <div className="text-center py-20">
+            <div ref={emptyRef} className="text-center py-20">
               <div className="relative mb-8">
                 <div className="text-8xl mb-4 opacity-20">💫</div>
                 <Sparkles className="w-12 h-12 text-primary mx-auto animate-pulse" />
