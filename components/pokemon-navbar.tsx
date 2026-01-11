@@ -133,7 +133,7 @@ export default function PokemonNavbar() {
                       variant="ghost"
                       className={`relative px-4 py-2 rounded-full transition-all duration-200 ${
                         isActive(link.href)
-                          ? "bg-primary/10 text-primary hover:bg-primary/20"
+                          ? " text-primary hover:bg-primary/20"
                           : "text-foreground hover:text-primary hover:bg-primary/5"
                       }`}
                       style={{ fontFamily: "var(--font-body)" }}
@@ -195,7 +195,7 @@ export default function PokemonNavbar() {
                       variant="ghost"
                       className={`mobile-nav-item w-full justify-start px-4 py-3 rounded-lg transition-all duration-200 ${
                         isActive(link.href)
-                          ? "bg-primary/10 text-primary"
+                          ? " text-primary"
                           : "text-foreground hover:text-primary hover:bg-primary/5"
                       }`}
                       style={{ fontFamily: "var(--font-body)" }}
